@@ -1,0 +1,10 @@
+[
+  {
+    "emulator": "shadps4",
+    "game_id": "CUSA00832",
+    "display_name": "Bloodborne",
+    "fork_repo": "https://github.com/shadps4-compat/shadps4-bloodborne",
+    "stability": "experimental",
+    "notes": "Community fork with shader patches for Bloodborne. Experimental — may break on updates."
+  }
+]

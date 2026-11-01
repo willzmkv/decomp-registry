@@ -1,0 +1,20 @@
+[
+  {
+    "rom_hash_md5": "20b854b239203baf6c961b850a4a51a2",
+    "project_id": "sm64-us",
+    "display_name": "Super Mario 64 (US)",
+    "repo": "https://github.com/sm64pc/sm64ex",
+    "build_system": "make",
+    "deps": ["python", "audiofile", "sdl2"],
+    "output_binary": "build/us_pc/sm64.us.f3dex2e"
+  },
+  {
+    "rom_hash_md5": "5bd07a5e7ea4c33890b0cbe75cbdf73d",
+    "project_id": "oot-us",
+    "display_name": "The Legend of Zelda: Ocarina of Time (US 1.0)",
+    "repo": "https://github.com/HackerN64/Zelda64Recomp",
+    "build_system": "cmake",
+    "deps": ["cmake", "python", "sdl2", "libpng", "zlib"],
+    "output_binary": "build/Zelda64Recomp"
+  }
+]
