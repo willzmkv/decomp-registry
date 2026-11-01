@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate registry JSON
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate decomp_registry.json
+        run: |
+          python -c "
+          import json, sys
+
+          with open('decomp_registry.json') as f:
+              entries = json.load(f)
+
+          required = {'rom_hash_md5', 'project_id', 'display_name', 'repo', 'build_system', 'deps', 'output_binary'}
+          for i, e in enumerate(entries):
+              missing = required - set(e.keys())
+              if missing:
+                  print(f'Entry {i} missing fields: {missing}')
+                  sys.exit(1)
+              if e['build_system'] not in ('make', 'cmake', 'meson'):
+                  print(f'Entry {i}: invalid build_system: {e[\"build_system\"]}')
+                  sys.exit(1)
+
+          print(f'decomp_registry.json: {len(entries)} entries, all valid')
+          "
+
+      - name: Validate emu_forks_registry.json
+        run: |
+          python -c "
+          import json, sys
+
+          with open('emu_forks_registry.json') as f:
+              entries = json.load(f)
+
+          required = {'emulator', 'game_id', 'display_name', 'fork_repo', 'stability', 'notes'}
+          valid_emulators = {'shadps4', 'kytyps5'}
+          valid_stability = {'stable', 'experimental'}
+
+          for i, e in enumerate(entries):
+              missing = required - set(e.keys())
+              if missing:
+                  print(f'Entry {i} missing fields: {missing}')
+                  sys.exit(1)
+              if e['emulator'] not in valid_emulators:
+                  print(f'Entry {i}: unknown emulator: {e[\"emulator\"]}')
+                  sys.exit(1)
+              if e['stability'] not in valid_stability:
+                  print(f'Entry {i}: invalid stability: {e[\"stability\"]}')
+                  sys.exit(1)
+
+          print(f'emu_forks_registry.json: {len(entries)} entries, all valid')
+          "
