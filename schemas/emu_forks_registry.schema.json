@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/willzmkv/decomp-registry/blob/main/schemas/emu_forks_registry.schema.json",
+  "title": "Project-R game-specific emulator fork registry",
+  "description": "emu_forks_registry.json as loaded by pr-builder (src/pr_builder/registry.py, v0.1.0): emulator -> game id -> fork. pr-builder treats EVERY top-level key as an emulator, so no other top-level keys (not even `$schema`) are allowed. Fields pr-builder reads are title, fork_repo, fork_reason and stability; source, title_id_source and notes are registry-only provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "shadps4": {
+      "description": "ShadPS4 forks keyed by PS4 title id (pr-builder reads it from PARAM.SFO as a CUSAxxxxx token).",
+      "type": "object",
+      "propertyNames": { "pattern": "^CUSA[0-9]{5}$" },
+      "additionalProperties": { "$ref": "#/$defs/fork" }
+    },
+    "kytyps5": {
+      "description": "KytyPS5 forks keyed by PS5 title id (PPSAxxxxx).",
+      "type": "object",
+      "propertyNames": { "pattern": "^PPSA[0-9]{5}$" },
+      "additionalProperties": { "$ref": "#/$defs/fork" }
+    }
+  },
+  "$defs": {
+    "httpsUrl": {
+      "type": "string",
+      "pattern": "^https://\\S+$"
+    },
+    "fork": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "fork_repo", "fork_reason", "stability", "source", "title_id_source"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fork_repo": {
+          "description": "HTTPS git clone URL of the fork (default branch is the one meant to be built).",
+          "type": "string",
+          "pattern": "^https://\\S+\\.git$"
+        },
+        "fork_reason": {
+          "description": "What the fork changes for this game, in the fork author's terms.",
+          "type": "string",
+          "minLength": 1
+        },
+        "stability": {
+          "description": "`stable` forks are used automatically by pr-builder; `experimental` ones only on user choice.",
+          "enum": ["stable", "experimental"]
+        },
+        "source": {
+          "description": "Permalink showing the fork targets this title id (fork README or source code).",
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "title_id_source": {
+          "description": "Independent confirmation that the title id belongs to this game (e.g. the shadPS4 game-compatibility tracker).",
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

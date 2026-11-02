@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/willzmkv/decomp-registry/blob/main/schemas/decomp_registry.schema.json",
+  "title": "Project-R decompilation registry",
+  "description": "decomp_registry.json as loaded by pr-builder (src/pr_builder/registry.py, v0.1.0): a `games` map keyed by the ROM's MD5. Fields pr-builder reads are id, name, platform, repo, build_type, build_args, asset_extractor, install_binary, deps and retroarch_fallback; pr-builder ignores every other field, so the provenance fields (rom_name, rom_sha1, source, support_source, build_source, notes) are registry-only. The registry requires every field explicitly even where pr-builder has a default.",
+  "type": "object",
+  "required": ["games"],
+  "additionalProperties": false,
+  "properties": {
+    "games": {
+      "description": "ROM MD5 (32 lowercase hex digits, No-Intro byte order: .z64 big-endian for N64, headerless .sfc for SNES) -> decompilation/recompilation project.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/md5" },
+      "additionalProperties": { "$ref": "#/$defs/game" }
+    }
+  },
+  "$defs": {
+    "md5": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "httpsUrl": {
+      "type": "string",
+      "pattern": "^https://\\S+$"
+    },
+    "relativePath": {
+      "description": "Relative POSIX path inside the cloned repo: no leading '/', no '\\\\', no '.' or '..' segments.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\\\\\x00-\\x1f]+$"
+    },
+    "platform": {
+      "description": "Platform id as sent on the wire by pr-mediad. pr-builder's `gamecube` alias is not accepted here; use `gc`.",
+      "enum": [
+        "ps1", "ps2", "ps3", "ps4", "ps5",
+        "n64", "gc", "wii",
+        "xbox", "xbox360",
+        "saturn", "dreamcast",
+        "nes", "snes", "gb", "gbc", "gba", "nds", "3ds", "switch",
+        "megadrive", "atari2600"
+      ]
+    },
+    "game": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "name", "platform", "repo", "build_type", "build_args",
+        "asset_extractor", "install_binary", "deps", "retroarch_fallback",
+        "rom_name", "rom_sha1", "source", "support_source", "build_source"
+      ],
+      "properties": {
+        "id": {
+          "description": "Build id: pr-builder's build cache dir (~/.cache/pr-builder/<id>), build lock and pr-maestro game_id. Several ROM hashes may share one id only if they describe the identical build.",
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "Display title; pr-builder uses it as the library directory ~/games/<platform>/<name>/, so it must be a single safe path component.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^(?!\\.{1,2}$)(?=\\S)(?=.*\\S$)[^/\\\\\\x00-\\x1f]+$"
+        },
+        "platform": { "$ref": "#/$defs/platform" },
+        "repo": {
+          "description": "HTTPS git clone URL (pr-builder runs `git clone --depth=1 <repo>`, default branch).",
+          "type": "string",
+          "pattern": "^https://\\S+\\.git$"
+        },
+        "build_type": {
+          "description": "pr-builder build runner: `make` runs `make <build_args>` in the repo root; `cmake` runs `cmake .. <build_args>` in <repo>/build, then `cmake --build . --parallel`.",
+          "enum": ["make", "cmake"]
+        },
+        "build_args": {
+          "description": "argv list (no shell): make arguments, or CMake configure arguments.",
+          "type": "array",
+          "default": [],
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "asset_extractor": {
+          "description": "Repo-relative script that extracts assets from the ROM, or null when the project extracts at runtime / has no separate step. Informational in pr-builder v0.1.0 (not run).",
+          "type": ["string", "null"],
+          "default": null,
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\\\\\x00-\\x1f]+$"
+        },
+        "install_binary": {
+          "description": "Built executable, relative to the repo root (for cmake: build/<path inside the build dir>).",
+          "$ref": "#/$defs/relativePath"
+        },
+        "deps": {
+          "description": "pacman package names installed with `pacman -S --needed` before building.",
+          "type": "array",
+          "default": [],
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9@_+][a-z0-9@._+-]*$" }
+        },
+        "retroarch_fallback": {
+          "description": "libretro core (without _libretro.so) used when the native build fails; empty string = platform default.",
+          "type": "string",
+          "default": "",
+          "pattern": "^[a-z0-9_]*$"
+        },
+        "rom_name": {
+          "description": "Exact ROM file name of this dump in the No-Intro/Redump DAT.",
+          "type": "string",
+          "minLength": 1
+        },
+        "rom_sha1": {
+          "description": "SHA-1 of the same dump (decomp projects usually check SHA-1; lets reviewers cross-check support_source).",
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "source": {
+          "description": "Where the MD5 is published: permalink to the DAT line (No-Intro / Redump / libretro-database).",
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "support_source": {
+          "description": "Permalink to the project's own list/check of supported dumps (hash list, README, hash-check script).",
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "build_source": {
+          "description": "Permalink to the project's Linux build documentation the build fields come from.",
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "notes": {
+          "description": "Free text: ROM placement, extra steps pr-builder cannot express yet, derivations.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}
